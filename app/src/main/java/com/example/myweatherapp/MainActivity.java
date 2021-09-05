@@ -9,8 +9,14 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;
@@ -22,30 +28,37 @@ import com.google.android.gms.tasks.Task;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.normal.TedPermission;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Retrofit retrofit;
     int REQUEST_LOCATION = 88;
+
+    EditText txtUser, txtTitle, txtBody;
+    Button btnEnviar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        retrofit = new Retrofit.Builder()
-                .baseUrl("https://jsonplaceholder.typicode.com/")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
+        txtUser = findViewById(R.id.txtUser);
+        txtTitle = findViewById(R.id.txtTitle);
+        txtBody = findViewById(R.id.txtBody);
+        btnEnviar = findViewById(R.id.btnEnviar);
 
         getLocation();
+
+        btnEnviar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                LeerWS();
+            }
+        });
 
         Button button = findViewById(R.id.location);
         button.setOnClickListener(new View.OnClickListener(){
@@ -64,6 +77,30 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void LeerWS(){
+        String url = "https://jsonplaceholder.typicode.com/posts/1";
+
+        StringRequest postRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    JSONObject jsonObject = new JSONObject(response);
+                    txtUser.setText(jsonObject.getString("userId"));
+                    txtBody.setText(jsonObject.getString("body"));
+                    txtTitle.setText(jsonObject.getString("title"));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+        Volley.newRequestQueue(this).add(postRequest);
     }
 
     private void Location() {

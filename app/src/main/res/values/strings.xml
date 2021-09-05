@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">MyWeatherAPP</string>
+    <string name="body">Body</string>
+    <string name="enviar">enviar</string>
+    <string name="userid">User ID</string>
+    <string name="title">Title</string>
 </resources>
