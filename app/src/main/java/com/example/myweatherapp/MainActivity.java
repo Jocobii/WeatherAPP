@@ -15,12 +15,15 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.provider.Settings;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -45,19 +48,20 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity {
 
     FusedLocationProviderClient fusedLocationProviderClient;
     int REQUEST_LOCATION = 88;
-
+    String apikey = "FYVQjGG9RAX24cSMaf5v5tupY7tyjvXD";
+    String coordinates = "";
     EditText txtUser, txtTitle, txtBody;
     TextView tv_latitude, tv_longitude;
     Button btnEnviar, btnlocation,button;
-
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,23 +90,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        /*
+
         btnEnviar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                LeerWS();
+                getLocationWithCoordinates(coordinates);
             }
         });
 
-        button.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view){
-                checkPermission();
-            }
-        });
-         */
     }
 
+    //Obtengo la localizacion actual
     @SuppressLint("MissingPermission")
     private void getCurrentLocation(){
         //inicializamos el manager de localizacion
@@ -122,6 +120,10 @@ public class MainActivity extends AppCompatActivity {
                         //Si no es nula la obtenemos
                         tv_latitude.setText(String.valueOf(location.getLatitude()));
                         tv_longitude.setText(String.valueOf(location.getLongitude()));
+                        coordinates = String.valueOf(location.getLatitude()) + "," + String.valueOf(location.getLongitude());
+                        getLocationWithCoordinates(coordinates);
+                        Toast.makeText(MainActivity.this, "Coordenadas: " + coordinates, Toast.LENGTH_LONG).show();
+
                     }else{
                         //Si es nula inicilizamos una peticion
                         LocationRequest locationRequest = LocationRequest.create();
@@ -153,25 +155,27 @@ public class MainActivity extends AppCompatActivity {
             checkPermissions();
         }
     }
-    private void LeerWS(){
-        String url = "https://jsonplaceholder.typicode.com/posts/1";
 
+
+    private void getLocationWithCoordinates(String coordenadas){
+        String url = "http://dataservice.accuweather.com/locations/v1/cities/geoposition/search?apikey=" + apikey + "&q=" + coordenadas;
         StringRequest postRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 try {
                     JSONObject jsonObject = new JSONObject(response);
-                    txtUser.setText(jsonObject.getString("userId"));
-                    txtBody.setText(jsonObject.getString("body"));
-                    txtTitle.setText(jsonObject.getString("title"));
+                    txtUser.setText(jsonObject.getString("Key"));
+                    txtBody.setText(jsonObject.getString("Type"));
+                    txtTitle.setText(jsonObject.getString("LocalizedName"));
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + response, Toast.LENGTH_LONG).show();
                 }
             }
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-
+                Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + error, Toast.LENGTH_LONG).show();
             }
         });
         Volley.newRequestQueue(this).add(postRequest);
