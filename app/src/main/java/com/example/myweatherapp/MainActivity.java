@@ -222,15 +222,6 @@ public class MainActivity extends AppCompatActivity {
                         tv_latitude.setText(String.valueOf(location.getLatitude()));
                         tv_longitude.setText(String.valueOf(location.getLongitude()));
 
-                        Toast.makeText(MainActivity.this, "Coordenadas: " + coordinates, Toast.LENGTH_LONG).show();
-                        String URLCITY = "http://dataservice.accuweather.com/forecasts/v1/daily/5day/"+cityKey;
-                        Toast.makeText(MainActivity.this, "URL: " + URLCITY, Toast.LENGTH_LONG).show();
-                        NetworkUtils.setWeatherdbBaseUrl(URLCITY);
-
-                        URL weatherUrl = NetworkUtils.buildUrlForWeather();
-                        new FetchWeatherDetails().execute(weatherUrl);
-                        Log.i(TAG, "onCreate: weatherUrl: " + weatherUrl);
-
                     }else{
                         //Si es nula inicilizamos una peticion
                         LocationRequest locationRequest = LocationRequest.create();
@@ -301,9 +292,15 @@ public class MainActivity extends AppCompatActivity {
                     txtUser.setText(jsonObject.getString("Key"));
                     txtBody.setText(jsonObject.getString("Type"));
                     txtTitle.setText(jsonObject.getString("LocalizedName"));
-
                     cityKey = jsonObject.getString("Key");
-                    setCityKey(cityKey);
+                    Toast.makeText(MainActivity.this, "Coordenadas: " + coordinates, Toast.LENGTH_LONG).show();
+                    String URLCITY = "http://dataservice.accuweather.com/forecasts/v1/daily/5day/"+cityKey;
+                    Toast.makeText(MainActivity.this, "URL: " + URLCITY, Toast.LENGTH_LONG).show();
+                    NetworkUtils.setWeatherdbBaseUrl(URLCITY);
+
+                    URL weatherUrl = NetworkUtils.buildUrlForWeather();
+                    new FetchWeatherDetails().execute(weatherUrl);
+                    Log.i(TAG, "onCreate: weatherUrl: " + weatherUrl);
 
                 } catch (JSONException e) {
                     e.printStackTrace();
