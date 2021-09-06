@@ -7,23 +7,19 @@ import androidx.core.app.ActivityCompat;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.Intent;
 import android.content.IntentSender;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Looper;
-import android.provider.Settings;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -44,11 +40,15 @@ import com.google.android.gms.tasks.Task;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.normal.TedPermission;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -56,18 +56,27 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     FusedLocationProviderClient fusedLocationProviderClient;
+    String cityKey = "";
     int REQUEST_LOCATION = 88;
-    String apikey = "FYVQjGG9RAX24cSMaf5v5tupY7tyjvXD";
+    String apikey = "obeIvBmGYxW56VgH5a8p7E5LQoGDsEkI";
     String coordinates = "";
-    EditText txtUser, txtTitle, txtBody;
+
+    public void setCityKey(String cityKey) {
+        this.cityKey = cityKey;
+    }
+    EditText txtUser, txtTitle, txtBody,txtWeather,txtWeatherText;
     TextView tv_latitude, tv_longitude;
-    Button btnEnviar, btnlocation,button;
+    Button  btnlocation;
+
+    private static final String TAG = MainActivity.class.getSimpleName();
+    private ArrayList<Weather> weatherArrayList = new ArrayList<>();
+    private ListView listView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        listView = findViewById(R.id.idListView);
         //Verificamos si los servicios estan activos
         checkPermissions();
 
@@ -75,29 +84,119 @@ public class MainActivity extends AppCompatActivity {
         txtUser = findViewById(R.id.txtUser);
         txtTitle = findViewById(R.id.txtTitle);
         txtBody = findViewById(R.id.txtBody);
-        btnEnviar = findViewById(R.id.btnEnviar);
         tv_latitude = findViewById(R.id.tv_latitude);
         tv_longitude = findViewById(R.id.tv_longitude);
         btnlocation = findViewById(R.id.btnlocation);
-        button = findViewById(R.id.location);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(MainActivity.this);
 
         btnlocation.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getCurrentLocation();
+                LocationManager locationManager = (LocationManager) getSystemService(
+                        Context.LOCATION_SERVICE
+                );
+                if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                        || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)){
+                    getCurrentLocation();
+
+                }else{
+                    checkPermissions();
+                }
+
             }
         });
 
 
-        btnEnviar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                getLocationWithCoordinates(coordinates);
-            }
-        });
+    }
 
+    private class FetchWeatherDetails extends AsyncTask<URL, Void, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(URL... urls) {
+            URL weatherUrl = urls[0];
+            String weatherSearchResults = null;
+
+            try {
+                weatherSearchResults = NetworkUtils.getResponseFromHttpUrl(weatherUrl);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Log.i(TAG, "doInBackground: weatherSearchResults: " + weatherSearchResults);
+            return weatherSearchResults;
+        }
+
+        @Override
+        protected void onPostExecute(String weatherSearchResults) {
+            if(weatherSearchResults != null && !weatherSearchResults.equals("")) {
+                weatherArrayList = parseJSON(weatherSearchResults);
+                //Just for testing
+                Iterator itr = weatherArrayList.iterator();
+                while(itr.hasNext()) {
+                    Weather weatherInIterator = (Weather) itr.next();
+                    Log.i(TAG, "onPostExecute: Date: " + weatherInIterator.getDate()+
+                            " Min: " + weatherInIterator.getMinTemp() +
+                            " Max: " + weatherInIterator.getMaxTemp() +
+                            " Link: " + weatherInIterator.getLink());
+                }
+            }
+            super.onPostExecute(weatherSearchResults);
+        }
+    }
+
+    private ArrayList<Weather> parseJSON(String weatherSearchResults) {
+        if(weatherArrayList != null) {
+            weatherArrayList.clear();
+        }
+
+        if(weatherSearchResults != null) {
+            try {
+                JSONObject rootObject = new JSONObject(weatherSearchResults);
+                JSONArray results = rootObject.getJSONArray("DailyForecasts");
+
+                for (int i = 0; i < results.length(); i++) {
+                    Weather weather = new Weather();
+
+                    JSONObject resultsObj = results.getJSONObject(i);
+
+                    String date = resultsObj.getString("Date");
+                    weather.setDate(date);
+
+                    JSONObject temperatureObj = resultsObj.getJSONObject("Temperature");
+                    String minTemperature = temperatureObj.getJSONObject("Minimum").getString("Value");
+                    weather.setMinTemp(minTemperature);
+
+                    String maxTemperature = temperatureObj.getJSONObject("Maximum").getString("Value");
+                    weather.setMaxTemp(maxTemperature);
+
+                    String link = resultsObj.getString("Link");
+                    weather.setLink(link);
+
+                   /* Log.i(TAG, "parseJSON: date: " + date + " " +
+                            "Min: " + minTemperature + " " +
+                            "Max: " + maxTemperature + " " +
+                            "Link: " + link);*/
+
+                    weatherArrayList.add(weather);
+                }
+
+                if(weatherArrayList != null) {
+                    WeatherAdapter weatherAdapter = new WeatherAdapter(this, weatherArrayList);
+                    listView.setAdapter(weatherAdapter);
+                }
+
+                return weatherArrayList;
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     //Obtengo la localizacion actual
@@ -118,11 +217,19 @@ public class MainActivity extends AppCompatActivity {
                     Location location = task.getResult();
                     if(location != null){
                         //Si no es nula la obtenemos
-                        tv_latitude.setText(String.valueOf(location.getLatitude()));
-                        tv_longitude.setText(String.valueOf(location.getLongitude()));
                         coordinates = String.valueOf(location.getLatitude()) + "," + String.valueOf(location.getLongitude());
                         getLocationWithCoordinates(coordinates);
+                        tv_latitude.setText(String.valueOf(location.getLatitude()));
+                        tv_longitude.setText(String.valueOf(location.getLongitude()));
+
                         Toast.makeText(MainActivity.this, "Coordenadas: " + coordinates, Toast.LENGTH_LONG).show();
+                        String URLCITY = "http://dataservice.accuweather.com/forecasts/v1/daily/5day/"+cityKey;
+                        Toast.makeText(MainActivity.this, "URL: " + URLCITY, Toast.LENGTH_LONG).show();
+                        NetworkUtils.setWeatherdbBaseUrl(URLCITY);
+
+                        URL weatherUrl = NetworkUtils.buildUrlForWeather();
+                        new FetchWeatherDetails().execute(weatherUrl);
+                        Log.i(TAG, "onCreate: weatherUrl: " + weatherUrl);
 
                     }else{
                         //Si es nula inicilizamos una peticion
@@ -140,7 +247,6 @@ public class MainActivity extends AppCompatActivity {
                                 tv_latitude.setText(String.valueOf(location1.getLatitude()));
                                 //set longitude
                                 tv_longitude.setText(String.valueOf(location1.getLongitude()));
-
                             }
                         };
                         //Request location update
@@ -156,6 +262,34 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void getWeatherWithCityKey(String key){
+        String url = "http://dataservice.accuweather.com/forecasts/v1/daily/1day/"+ key +"?apikey=" + apikey;
+        StringRequest postRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                try {
+                    JSONObject jsonObject = new JSONObject(response);
+                    JSONObject results = jsonObject.getJSONObject("DailyForecasts");
+                    for (int i = 0; i < results.length(); i++) {
+                        JSONObject resultsObj = results.getJSONObject(String.valueOf(i));
+                        JSONObject temperatureObj = resultsObj.getJSONObject("Temperature");
+                        String minTemperature = temperatureObj.getJSONObject("Minimum").getString("Value");
+                        txtWeather.setText(jsonObject.getString(minTemperature));
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + response, Toast.LENGTH_LONG).show();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + error, Toast.LENGTH_LONG).show();
+            }
+        });
+        Volley.newRequestQueue(this).add(postRequest);
+    }
 
     private void getLocationWithCoordinates(String coordenadas){
         String url = "http://dataservice.accuweather.com/locations/v1/cities/geoposition/search?apikey=" + apikey + "&q=" + coordenadas;
@@ -167,6 +301,10 @@ public class MainActivity extends AppCompatActivity {
                     txtUser.setText(jsonObject.getString("Key"));
                     txtBody.setText(jsonObject.getString("Type"));
                     txtTitle.setText(jsonObject.getString("LocalizedName"));
+
+                    cityKey = jsonObject.getString("Key");
+                    setCityKey(cityKey);
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                     Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + response, Toast.LENGTH_LONG).show();
