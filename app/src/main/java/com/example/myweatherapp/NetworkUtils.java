@@ -18,7 +18,7 @@ public class NetworkUtils {
         WEATHERDB_BASE_URL = weatherdbBaseUrl;
     }
 
-    private final static String API_KEY = "obeIvBmGYxW56VgH5a8p7E5LQoGDsEkI";
+    private final static String API_KEY = "MG2NAQyrB87rbcrBFCjY3T4If29jNYFc";
 
     private final static String METRIC_VALUE = "true";
 

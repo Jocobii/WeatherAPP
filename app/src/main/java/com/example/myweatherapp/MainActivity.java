@@ -46,11 +46,17 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -58,14 +64,9 @@ public class MainActivity extends AppCompatActivity {
     FusedLocationProviderClient fusedLocationProviderClient;
     String cityKey = "";
     int REQUEST_LOCATION = 88;
-    String apikey = "obeIvBmGYxW56VgH5a8p7E5LQoGDsEkI";
+    String apikey = "MG2NAQyrB87rbcrBFCjY3T4If29jNYFc";
     String coordinates = "";
-
-    public void setCityKey(String cityKey) {
-        this.cityKey = cityKey;
-    }
-    EditText txtUser, txtTitle, txtBody,txtWeather,txtWeatherText;
-    TextView tv_latitude, tv_longitude;
+    TextView txtUser, txtTitle, txtBody,txtWeather,tv_latitude, tv_longitude;
     Button  btnlocation;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -164,14 +165,31 @@ public class MainActivity extends AppCompatActivity {
 
                     JSONObject resultsObj = results.getJSONObject(i);
 
-                    String date = resultsObj.getString("Date");
-                    weather.setDate(date);
+                    Integer unixSeconds = resultsObj.getInt("EpochDate");
+                    String datesString = unixSeconds.toString();
+                    try {
+                        // convert seconds to milliseconds
+                        Date date = new java.util.Date(unixSeconds*1000L);
+                        // the format of your date
+                        SimpleDateFormat sdf = new java.text.SimpleDateFormat(
+                                "EEEE d 'de' MMMM 'de' yyyy", new Locale("ES", "MX"));
+                        // give a timezone reference for formatting (see comment at the bottom)
+                        sdf.setTimeZone(java.util.TimeZone.getTimeZone("GMT-4"));
+                        String formattedDate = sdf.format(date);
+                        weather.setDate(formattedDate);
+                        Log.e("fecha:", formattedDate);
+                        Log.e("fecha number:", datesString);
+                        Toast.makeText(MainActivity.this, "Hora: " + formattedDate, Toast.LENGTH_LONG).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
 
                     JSONObject temperatureObj = resultsObj.getJSONObject("Temperature");
-                    String minTemperature = temperatureObj.getJSONObject("Minimum").getString("Value");
+                    String minTemperature = temperatureObj.getJSONObject("Minimum").getString("Value")+"° C";
                     weather.setMinTemp(minTemperature);
 
-                    String maxTemperature = temperatureObj.getJSONObject("Maximum").getString("Value");
+                    String maxTemperature = temperatureObj.getJSONObject("Maximum").getString("Value")+"° C";
                     weather.setMaxTemp(maxTemperature);
 
                     String link = resultsObj.getString("Link");
@@ -251,35 +269,6 @@ public class MainActivity extends AppCompatActivity {
             //Cuando el servicio no esta activado
             checkPermissions();
         }
-    }
-
-    private void getWeatherWithCityKey(String key){
-        String url = "http://dataservice.accuweather.com/forecasts/v1/daily/1day/"+ key +"?apikey=" + apikey;
-        StringRequest postRequest = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                try {
-                    JSONObject jsonObject = new JSONObject(response);
-                    JSONObject results = jsonObject.getJSONObject("DailyForecasts");
-                    for (int i = 0; i < results.length(); i++) {
-                        JSONObject resultsObj = results.getJSONObject(String.valueOf(i));
-                        JSONObject temperatureObj = resultsObj.getJSONObject("Temperature");
-                        String minTemperature = temperatureObj.getJSONObject("Minimum").getString("Value");
-                        txtWeather.setText(jsonObject.getString(minTemperature));
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + response, Toast.LENGTH_LONG).show();
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, "Ha ocurrido un error: " + error, Toast.LENGTH_LONG).show();
-            }
-        });
-        Volley.newRequestQueue(this).add(postRequest);
     }
 
     private void getLocationWithCoordinates(String coordenadas){

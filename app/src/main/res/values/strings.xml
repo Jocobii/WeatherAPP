@@ -2,6 +2,6 @@
     <string name="app_name">MyWeatherAPP</string>
     <string name="body">Body</string>
     <string name="enviar">enviar</string>
-    <string name="userid">User ID</string>
-    <string name="title">Title</string>
+    <string name="userid">City Code</string>
+    <string name="title">Nombre de la ciudad</string>
 </resources>
