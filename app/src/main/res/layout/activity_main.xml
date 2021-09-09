@@ -75,8 +75,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btnlocation"
-        android:text="Get Location"/>
+        android:text="Ver Clima"/>
 
+    <TextView
+        android:id="@+id/tvClima"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Clima de la semana"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="20sp"
+        android:textStyle="bold" />
     <ListView
         android:id="@+id/idListView"
         android:layout_width="match_parent"

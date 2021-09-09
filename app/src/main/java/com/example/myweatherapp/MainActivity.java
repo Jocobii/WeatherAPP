@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     FusedLocationProviderClient fusedLocationProviderClient;
     String cityKey = "";
     int REQUEST_LOCATION = 88;
-    String apikey = "MG2NAQyrB87rbcrBFCjY3T4If29jNYFc";
+    String apikey = "AYsdPLlILmi9fiZDfJfCAHQu8YgB7DPU";
     String coordinates = "";
     TextView txtUser, txtTitle, txtBody,txtWeather,tv_latitude, tv_longitude;
     Button  btnlocation;
@@ -166,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject resultsObj = results.getJSONObject(i);
 
                     Integer unixSeconds = resultsObj.getInt("EpochDate");
-                    String datesString = unixSeconds.toString();
                     try {
                         // convert seconds to milliseconds
                         Date date = new java.util.Date(unixSeconds*1000L);
@@ -177,9 +176,6 @@ public class MainActivity extends AppCompatActivity {
                         sdf.setTimeZone(java.util.TimeZone.getTimeZone("GMT-4"));
                         String formattedDate = sdf.format(date);
                         weather.setDate(formattedDate);
-                        Log.e("fecha:", formattedDate);
-                        Log.e("fecha number:", datesString);
-                        Toast.makeText(MainActivity.this, "Hora: " + formattedDate, Toast.LENGTH_LONG).show();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -192,13 +188,9 @@ public class MainActivity extends AppCompatActivity {
                     String maxTemperature = temperatureObj.getJSONObject("Maximum").getString("Value")+"° C";
                     weather.setMaxTemp(maxTemperature);
 
-                    String link = resultsObj.getString("Link");
-                    weather.setLink(link);
-
-                   /* Log.i(TAG, "parseJSON: date: " + date + " " +
-                            "Min: " + minTemperature + " " +
-                            "Max: " + maxTemperature + " " +
-                            "Link: " + link);*/
+                    JSONObject dayObj = resultsObj.getJSONObject("Day");
+                    String weatherText = dayObj.getString("IconPhrase");
+                    weather.setLink(weatherText);
 
                     weatherArrayList.add(weather);
                 }

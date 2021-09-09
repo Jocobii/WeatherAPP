@@ -18,10 +18,11 @@ public class NetworkUtils {
         WEATHERDB_BASE_URL = weatherdbBaseUrl;
     }
 
-    private final static String API_KEY = "MG2NAQyrB87rbcrBFCjY3T4If29jNYFc";
+    private final static String API_KEY = "AYsdPLlILmi9fiZDfJfCAHQu8YgB7DPU";
 
     private final static String METRIC_VALUE = "true";
-
+    private final static String LENGUAGE_ES = "language";
+    private final static String LENGUAGE_VALUE = "es-mx";
     private final static String PARAM_API_KEY = "apikey";
 
     private final static String PARAM_METRIC = "metric";
@@ -29,6 +30,7 @@ public class NetworkUtils {
     public static URL buildUrlForWeather() {
         Uri builtUri = Uri.parse(WEATHERDB_BASE_URL).buildUpon()
                 .appendQueryParameter(PARAM_API_KEY, API_KEY)
+                .appendQueryParameter(LENGUAGE_ES, LENGUAGE_VALUE)
                 .appendQueryParameter(PARAM_METRIC, METRIC_VALUE)
                 .build();
 
